@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:fsff}",
+            "name": "Debug fsff",
+            "program": "${workspaceFolder:fsff}/.build/debug/fsff",
+            "preLaunchTask": "swift: Build Debug fsff"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:fsff}",
+            "name": "Release fsff",
+            "program": "${workspaceFolder:fsff}/.build/release/fsff",
+            "preLaunchTask": "swift: Build Release fsff"
+        }
+    ]
+}

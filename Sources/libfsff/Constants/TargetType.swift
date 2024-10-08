@@ -23,10 +23,7 @@
 import Foundation
 import ArgumentParser
 
-/// Enum for controlling which mode to use when using the cli
-public enum Mode: String, ExpressibleByArgument, CaseIterable {
-    case hash = "hash"
-    case compare = "compare"
-    case encrypt = "encrypt"
-    case decrypt = "decrypt"
+public enum TargetType: String, ExpressibleByArgument, CaseIterable {
+    case file = "file"
+    case directory = "directory"
 }

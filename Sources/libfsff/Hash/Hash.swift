@@ -46,10 +46,26 @@ public func getFileHashes(from filePath: URL) -> [String] {
         let sha512String: String = String("SHA512: \(sha512Data.compactMap { String(format:"%02x", $0) }.joined())")
 
         results = [md5String, sha1String, sha256String, sha384String, sha512String]
-    } catch {
+    } catch (let err) {
+        print(err)
+        
         print("Failed to get hashes")
         return []
     }
 
     return results
+}
+
+public func compareHashes(target1: URL, target2: URL) -> Bool {
+    let target1Hashes: [String] = getFileHashes(from: target1)
+    let target2Hashes: [String] = getFileHashes(from: target2)
+
+    if target1Hashes.isEmpty || target2Hashes.isEmpty {
+        return false;
+    }
+
+    let target1Sha512Hash: String.SubSequence = target1Hashes.last!.split(separator: " ")[1]
+    let target2Sha512Hash: String.SubSequence = target2Hashes.last!.split(separator: " ")[1]
+
+    return target1Sha512Hash == target2Sha512Hash
 }

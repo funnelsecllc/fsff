@@ -51,7 +51,7 @@ let package = Package(
             name: "fsfftests",
             dependencies: ["libfsff"],
             resources: [
-                .copy("Support/test.txt")
+                .copy("Support/")
             ]
         )
     ]

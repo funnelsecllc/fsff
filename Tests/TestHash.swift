@@ -29,4 +29,15 @@ class TestHash: XCTestCase {
         XCTAssert(sha384Hash == "06687bda44e14e677b7bad7558ba483b9a9441e238c757fb24e2594a4d8c2721edc8af477d5710b4e6e7e27ca1b84640")
         XCTAssert(sha512Hash == "5f80013bbe9684d3069c3025189ec35e8c8e1d73089963b6b19c01f71081df3113e10dbd5c83a459dd2ba5814932cab156a6fd11938ec26120606bf4ae5b242f")
     }
+
+    func test_compareHashesBetweenTwoFiles() {
+        let isSameHash: Bool = compareHashes(target1: file, target2: file)
+        XCTAssertTrue(isSameHash)
+    }
+
+    func test_compareHashesBetweenDifferentFiles() {
+        let file2: URL = URL(fileURLWithPath: "Tests/Support/exam.txt")
+        let isSameHash: Bool = compareHashes(target1: file, target2: file2)
+        XCTAssertFalse(isSameHash)
+    }
 }

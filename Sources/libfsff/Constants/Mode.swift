@@ -29,4 +29,5 @@ public enum Mode: String, ExpressibleByArgument, CaseIterable {
     case compare = "compare"
     case encrypt = "encrypt"
     case decrypt = "decrypt"
+    case generate = "generate"
 }

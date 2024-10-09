@@ -85,12 +85,19 @@ public func decrypt(file: URL, keyFile: URL, encryptionType: EncryptionType) -> 
 
     // Attempt to decrypt file
     do {
-        let sealedBox: AES.GCM.SealedBox = try AES.GCM.SealedBox(combined: fileContents)
-        let decryptedData: Data = try aesGCMDecryption(with: sealedBox, key: key)
+        if encryptionType == .aes {
+            let sealedBox: AES.GCM.SealedBox = try AES.GCM.SealedBox(combined: fileContents)
+            let decryptedData: Data = try aesGCMDecryption(with: sealedBox, key: key)
+
+            return saveDecryptedData(with: decryptedData, fileData: file)
+        }
+
+        let sealedBox: ChaChaPoly.SealedBox = try ChaChaPoly.SealedBox(combined: fileContents)
+        let decryptedData: Data = try chaChaPolyDecryption(with: sealedBox, key: key)
 
         return saveDecryptedData(with: decryptedData, fileData: file)
     } catch {
-        print("unable to decrypt file")
+        print("Unable to decrypt file")
         return false
     }
 }

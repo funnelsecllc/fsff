@@ -27,7 +27,7 @@ import Foundation
 /// - Parameters:
 ///   - data: The data to encrypt
 ///   - key: The key to encrypt the data with
-/// - Throws: AES.GCM.seal Error  
+/// - Throws: AES.GCM.seal Error
 /// - Returns: The encrypted data
 private func aesGCMEncryption(with data: Data, key: SymmetricKey) throws -> Data? {
     return try AES.GCM.seal(data, using: key).combined
@@ -84,9 +84,15 @@ public func encrypt(file: URL, keyFile: URL, encryptionType: EncryptionType) -> 
 
     // Attempt to encrypt file
     do {
-        guard let encryptedData: Data = try aesGCMEncryption(with: fileContents, key: key) else {
-            return false
+        if encryptionType == .aes {
+            guard let encryptedData: Data = try aesGCMEncryption(with: fileContents, key: key)
+            else {
+                return false
+            }
+            return saveEncryptedData(with: encryptedData, fileData: file)
         }
+
+        let encryptedData: Data = try chaChaPolyEncryption(with: fileContents, key: key)
         return saveEncryptedData(with: encryptedData, fileData: file)
     } catch {
         print("Unable to encrypt file")

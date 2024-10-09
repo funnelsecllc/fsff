@@ -35,19 +35,28 @@ struct fsff: ParsableCommand {
     @Option(name: .shortAndLong, help: "The second target file. Use with compare mode")
     var twoTarget: String? = nil
 
+    @Option(name: .shortAndLong, help: "The size of the key to use")
+    var size: Size? = nil
+
+    @Option(name: .shortAndLong, help: "The key file for encryption and decryption")
+    var keyFile: String? = nil
+
+    @Option(name: .shortAndLong, help: "The encryption type to use")
+    var encryptionType: EncryptionType? = nil
+
     mutating func run() throws {
         let fileManager: FileManager = FileManager.default
-        let target1Path: URL = URL(fileURLWithPath: oneTarget)
+        let target1Url: URL = URL(fileURLWithPath: oneTarget)
 
         // Ensure that the target file exists
-        if !fileManager.fileExists(atPath: target1Path.path) {
-            print("Does not exist: \(target1Path.path)")
+        if !fileManager.fileExists(atPath: target1Url.path) {
+            print("Does not exist: \(target1Url.path)")
             throw ArgumentParser.ExitCode.failure
         }
         // Verifiy what mode is selected
         if mode == .compare {
             // Ensure that the second target file exists
-            if twoTarget == nil {
+            if twoTarget == nil || twoTarget!.isEmpty {
                 print("Missing target2")
                 throw ArgumentParser.ExitCode.failure
             }
@@ -56,32 +65,101 @@ struct fsff: ParsableCommand {
                 throw ArgumentParser.ExitCode.failure
             }
         }
+        // Ensure that these modes have the encryptionType set
+        if (mode == .encrypt || mode == .decrypt) && encryptionType == nil {
+            print("Encryption type must be set")
+            throw ArgumentParser.ExitCode.failure
+        }
 
         switch mode {
         // Run the hash command
         case .hash:
-            let results: [String] = getFileHashes(from: target1Path)
+            let results: [String] = getFileHashes(from: target1Url)
             print(results.joined(separator: "\n"))
             break
 
         // Run the compare command
         case .compare:
             let isSameHash: Bool = compareHashes(
-                target1: target1Path,
+                target1: target1Url,
                 target2: URL(fileURLWithPath: twoTarget!)
             )
-
             if !isSameHash {
                 print("Hashes do not match.")
                 throw ArgumentParser.ExitCode.failure
-            } else {
-                print("Hashes match.")
             }
+
+            print("Hashes match.")
             break
 
-        default:
-            print("Invalid option")
-            throw ArgumentParser.ExitCode.failure
+        // Run the encrypt command
+        case .encrypt:
+            if keyFile == nil || keyFile!.isEmpty {
+                print("Missing key file option")
+                throw ArgumentParser.ExitCode.failure
+            }
+
+            let keyFileUrl: URL = URL(fileURLWithPath: keyFile!)
+            if !fileManager.fileExists(atPath: keyFileUrl.path) {
+                print("Key file does not exist: \(keyFileUrl.path)")
+                throw ArgumentParser.ExitCode.failure
+            }
+
+            let isEncryptionSuccessful: Bool = encrypt(
+                file: target1Url, 
+                keyFile: keyFileUrl,
+                encryptionType: encryptionType!
+            )
+            if !isEncryptionSuccessful {
+                print("Failed to encrypt file: \(target1Url.path)")
+                throw ArgumentParser.ExitCode.failure
+            }
+
+            print("Encryption successful")
+            break
+
+        // Run the decrypt command
+        case .decrypt:
+            if keyFile == nil || keyFile!.isEmpty {
+                print("Missing key file option")
+                throw ArgumentParser.ExitCode.failure
+            }
+
+            let keyFileUrl: URL = URL(fileURLWithPath: keyFile!)
+            if !fileManager.fileExists(atPath: keyFileUrl.path) {
+                print("Key file does not exist: \(keyFileUrl.path)")
+                throw ArgumentParser.ExitCode.failure
+            }
+
+            let isDecryptionSuccessful: Bool = decrypt(
+                file: target1Url, 
+                keyFile: keyFileUrl, 
+                encryptionType: encryptionType!
+            )
+            if !isDecryptionSuccessful {
+                print("Failed to decrypt file: \(target1Url.path)")
+                throw ArgumentParser.ExitCode.failure
+            }
+            print("Decryption successful")
+            break
+
+        // Run the generate command
+        case .generate:
+            // Ensure that the key size has been configured
+            if size == nil {
+                print("Missing size option")
+                throw ArgumentParser.ExitCode.failure
+            }
+
+            // Attempt to create and dave the key file
+            let isKeyGenerationSuccessful: Bool = generateKey(with: size!, to: target1Url)
+            if !isKeyGenerationSuccessful {
+                print("Failed to save key file")
+                throw ArgumentParser.ExitCode.failure
+            }
+
+            print("Saved key file to: \(target1Url.path)")
+            break
         }
     }
 }

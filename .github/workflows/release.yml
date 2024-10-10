@@ -21,7 +21,7 @@ jobs:
       - name: Build binary
         run: swift build -c release --product fsff
       - name: Compress archive
-        run: tar -czf ${{ github.ref_name }}.tar.gz -C $(swift build -c release --show-bin-path) fsff
+        run: tar -czf ${{ matrix.os }}${{ github.ref_name }}.tar.gz -C $(swift build -c release --show-bin-path) fsff
       - name: Release
         uses: softprops/action-gh-release@v2
         with:

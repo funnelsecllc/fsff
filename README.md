@@ -1,7 +1,7 @@
 # fsff - FunnelSec FunnelFiles
 
 [![HitCount](https://hits.dwyl.com/funnelsecllc/fsff.svg?style=flat)](http://hits.dwyl.com/funnelsecllc/fsff)
-![Static Badge](https://img.shields.io/badge/swift_tools_version-6.0-orange)
+![Static Badge](https://img.shields.io/badge/swift_tools_version-5.10-orange)
 ![GitHub License](https://img.shields.io/github/license/funnelsecllc/fsff)
 ![GitHub Release](https://img.shields.io/github/v/release/funnelsecllc/fsff)
 ![GitHub Downloads (all assets, latest release)](https://img.shields.io/github/downloads/funnelsecllc/fsff/latest/total)
@@ -14,8 +14,8 @@ A security CLI utility for file operations.
 - macOS or Linux
 - Swift installed on your machine
   - You can install a Swift version manager like [swiftly](https://github.com/swiftlang/swiftly)
-  - Currently built with Swift version 6.0.1
-- Swift tools version 6.0
+  - Currently built with Swift version 5.10.1
+- Swift tools version 5.10
 
 ## Building from source
 

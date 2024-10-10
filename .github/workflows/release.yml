@@ -7,8 +7,16 @@ on:
       
 jobs:
   release:
-    runs-on: [ubuntu-latest, macos-latest]
+    name: Swift ${{ matrix.swift }} on ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        swift: ['5.10']
+    runs-on: ${{ matrix.os }}
     steps:
+      - uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: ${{ matrix.swift }}
       - uses: actions/checkout@v4
       - name: Build binary
         run: swift build -c release --arch arm64 --arch x86_64 --product fsff

@@ -48,6 +48,7 @@ struct fsff: ParsableCommand {
     var directory: Bool = false
 
     mutating func run() throws {
+        var isDirectory: ObjCBool = directory ? true : false
         if mode == .generate && directory {
             print("The `generate` mode does not support directory parsing.")
             throw ArgumentParser.ExitCode.failure
@@ -75,7 +76,7 @@ struct fsff: ParsableCommand {
         }
 
         // Ensure that the target file exists
-        if !fileManager.fileExists(atPath: target1Url.path, isDirectory: &directory) {
+        if !fileManager.fileExists(atPath: target1Url.path, isDirectory: &isDirectory) {
             print("Does not exist: '\(target1Url.path)'.")
             throw ArgumentParser.ExitCode.failure
         }

@@ -19,9 +19,11 @@ jobs:
           swift-version: ${{ matrix.swift }}
       - uses: actions/checkout@v4
       - name: Build binary
-        run: swift build -c release --arch arm64 --arch x86_64 --product fsff
+        run: swift build -c release --product fsff
+      - name: Get build directory
+        run: RELEASE_DIR=$(swift build -c release --show-bin-path)
       - name: Compress archive
-        run: tar -czf ${{ github.ref_name }}.tar.gz -C .build/release/ fsff
+        run: tar -czf ${{ github.ref_name }}.tar.gz -C $RELEASE_DIR fsff
       - name: Release
         uses: softprops/action-gh-release@v2
         with:

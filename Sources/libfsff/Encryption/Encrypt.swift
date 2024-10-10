@@ -46,11 +46,12 @@ private func chaChaPolyEncryption(with data: Data, key: SymmetricKey) throws -> 
 ///  Method to save the encryted data to file
 /// - Parameters:
 ///   - data: The encrypted data to save
-///   - fileData: The file url object to store data into
+///   - fileUrl: The file url object to store data into
 /// - Returns: True if the file was created along with the data otherwise false
-private func saveEncryptedData(with data: Data, fileData: URL) -> Bool {
+private func saveEncryptedData(with data: Data, fileUrl: URL) -> Bool {
     return FileManager.default.createFile(
-        atPath: fileData.lastPathComponent + ".enc", contents: data
+        atPath: fileUrl.path + ".enc",
+        contents: data
     )
 }
 
@@ -59,43 +60,95 @@ private func saveEncryptedData(with data: Data, fileData: URL) -> Bool {
 ///   - file: The target file to encrypt
 ///   - keyFile: The key file to use for encrypting
 ///   - encryptionType: The encryption method to use
+///   - isDirectory: Whether or not to encrypt a directory.
+///   - mode: The mode to use for the encryption.
 /// - Returns: True if the process was succesful otherwise false
-public func encrypt(file: URL, keyFile: URL, encryptionType: EncryptionType) -> Bool {
+public func encrypt(
+    target: URL,
+    keyFile: URL,
+    encryptionType: EncryptionType,
+    isDirectory: Bool,
+    mode: Mode
+) -> Bool {
     let keyData: Data
     let key: SymmetricKey
     let fileContents: Data
+    var subFiles: [URL] = []
+    var encryptionStatuses: [Bool] = []
 
     // Ensure that the key file can be read
     do {
         keyData = try Data(contentsOf: keyFile)
         key = SymmetricKey(data: keyData)
     } catch {
-        print("Invalid key file")
+        print("Invalid key file.")
         return false
     }
 
-    // Ensure that the target file can be read
-    do {
-        fileContents = try Data(contentsOf: file)
-    } catch {
-        print("Unable to read target file")
-        return false
+    // Get all the files in the target directory
+    if isDirectory {
+        subFiles = getDirectoryFiles(from: target, mode: mode)
     }
 
-    // Attempt to encrypt file
+    // Attempt to encrypt files in directory
     do {
+        if isDirectory {
+            for fileUrl: URL in subFiles {
+                let content: Data = try Data(contentsOf: fileUrl)
+
+                // Encrypted the contents of the directory
+                if encryptionType == .aes {
+                    guard let encryptedData: Data = try aesGCMEncryption(with: content, key: key)
+                    else {
+                        continue
+                    }
+
+                    let saveSuccessful: Bool = saveEncryptedData(
+                        with: encryptedData,
+                        fileUrl: fileUrl
+                    )
+                    print("Encrypting \(fileUrl.path): \(saveSuccessful)")
+                    encryptionStatuses.append(saveSuccessful)
+                } else {
+                    let encryptedData: Data = try chaChaPolyEncryption(with: content, key: key)
+                    let saveSuccessful: Bool = saveEncryptedData(
+                        with: encryptedData,
+                        fileUrl: fileUrl
+                    )
+                    encryptionStatuses.append(saveSuccessful)
+                }
+            }
+
+            // Check for any failed attempts
+            let failCount: Int = encryptionStatuses.filter { $0 == false }.count
+            if failCount != 0 {
+                print("Failed to encrypt \(failCount) files.")
+                return false
+            }
+            return true
+        }
+
+        // Ensure that the target file can be read
+        do {
+            fileContents = try Data(contentsOf: target)
+        } catch {
+            print("Unable to read target file.")
+            return false
+        }
+
+        // Attempt to encrypt the target file
         if encryptionType == .aes {
             guard let encryptedData: Data = try aesGCMEncryption(with: fileContents, key: key)
             else {
                 return false
             }
-            return saveEncryptedData(with: encryptedData, fileData: file)
+            return saveEncryptedData(with: encryptedData, fileUrl: target)
+        } else {
+            let encryptedData: Data = try chaChaPolyEncryption(with: fileContents, key: key)
+            return saveEncryptedData(with: encryptedData, fileUrl: target)
         }
-
-        let encryptedData: Data = try chaChaPolyEncryption(with: fileContents, key: key)
-        return saveEncryptedData(with: encryptedData, fileData: file)
     } catch {
-        print("Unable to encrypt file")
+        print("Unable to encrypt file.")
         return false
     }
 }

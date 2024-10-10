@@ -51,8 +51,8 @@ private func chaChaPolyDecryption(
 ///   - data: The decrypted data to save
 ///   - fileData: The file url object to save data into
 /// - Returns: True if the file was created otherwise false
-private func saveDecryptedData(with data: Data, fileData: URL) -> Bool {
-    return FileManager.default.createFile(atPath: fileData.lastPathComponent, contents: data)
+private func saveDecryptedData(with data: Data, fileUrl: URL) -> Bool {
+    return FileManager.default.createFile(atPath: fileUrl.path, contents: data)
 }
 
 ///  Method to facilitate the operations for decrypting files
@@ -60,44 +60,100 @@ private func saveDecryptedData(with data: Data, fileData: URL) -> Bool {
 ///   - file: The target file to decrypt
 ///   - keyFile: The key files used for decrypting
 ///   - encryptionType: The encryption method to use
+///   - isDirectory: Whether or not to encrypt a directory.
 /// - Returns: True if the process was successful otherwise false
-public func decrypt(file: URL, keyFile: URL, encryptionType: EncryptionType) -> Bool {
+public func decrypt(
+    target: URL, 
+    keyFile: URL, 
+    encryptionType: EncryptionType, 
+    isDirectory: Bool, 
+    mode: Mode
+)
+    -> Bool
+{
     let keyData: Data
     let key: SymmetricKey
     let fileContents: Data
+    var subFiles: [URL] = []
+    var encryptionStatuses: [Bool] = []
 
     // Ensure that the key file can be read
     do {
         keyData = try Data(contentsOf: keyFile)
         key = SymmetricKey(data: keyData)
     } catch {
-        print("Invalid key file")
+        print("Invalid key file.")
         return false
     }
 
-    // Ensure that the target file can be read
-    do {
-        fileContents = try Data(contentsOf: file)
-    } catch {
-        print("Unable to read target file")
-        return false
+    // Get all the files in the target directory
+    if isDirectory {
+        subFiles = getDirectoryFiles(from: target, mode: mode)
     }
 
     // Attempt to decrypt file
     do {
-        if encryptionType == .aes {
-            let sealedBox: AES.GCM.SealedBox = try AES.GCM.SealedBox(combined: fileContents)
-            let decryptedData: Data = try aesGCMDecryption(with: sealedBox, key: key)
+        if isDirectory {
+            for fileUrl: URL in subFiles {
+                let content: Data = try Data(contentsOf: fileUrl)
+                let newPath: String = fileUrl.path.replacingOccurrences(of: ".enc", with: "")
+                let decryptedFileUrl: URL = URL(fileURLWithPath: newPath)
 
-            return saveDecryptedData(with: decryptedData, fileData: file)
+                // Encrypted the contents of the directory
+                if encryptionType == .aes {
+                    let sealedBox: AES.GCM.SealedBox = try AES.GCM.SealedBox(combined: content)
+                    let encryptedData: Data = try aesGCMDecryption(with: sealedBox, key: key)
+                    let saveSuccessful: Bool = saveDecryptedData(
+                        with: encryptedData,
+                        fileUrl: decryptedFileUrl
+                    )
+                    encryptionStatuses.append(saveSuccessful)
+                } else {
+                    let sealedBox: ChaChaPoly.SealedBox = try ChaChaPoly.SealedBox(
+                        combined: content)
+                    let encryptedData: Data = try chaChaPolyDecryption(with: sealedBox, key: key)
+                    let saveSuccessful: Bool = saveDecryptedData(
+                        with: encryptedData,
+                        fileUrl: decryptedFileUrl
+                    )
+                    encryptionStatuses.append(saveSuccessful)
+                }
+            }
+
+            // Check for any failed attempts
+            let failCount: Int = encryptionStatuses.filter { $0 == false }.count
+            if failCount != 0 {
+                print("Failed to decrypt \(failCount) files.")
+                return false
+            }
+            return true
         }
 
-        let sealedBox: ChaChaPoly.SealedBox = try ChaChaPoly.SealedBox(combined: fileContents)
-        let decryptedData: Data = try chaChaPolyDecryption(with: sealedBox, key: key)
+        // Ensure that the target file can be read
+        do {
+            fileContents = try Data(contentsOf: target)
+        } catch {
+            print("Unable to read target file.")
+            return false
+        }
 
-        return saveDecryptedData(with: decryptedData, fileData: file)
+        let newPath: String = target.path.replacingOccurrences(of: ".enc", with: "")
+        let decryptedFileUrl: URL = URL(fileURLWithPath: newPath)
+
+        // Attempt to encrypt the target file
+        if encryptionType == .aes {
+            let sealedBox: AES.GCM.SealedBox = try AES.GCM.SealedBox(combined: fileContents)
+            let encryptedData: Data = try aesGCMDecryption(with: sealedBox, key: key)
+
+            return saveDecryptedData(with: encryptedData, fileUrl: decryptedFileUrl)
+        } else {
+            let sealedBox: ChaChaPoly.SealedBox = try ChaChaPoly.SealedBox(combined: fileContents)
+            let encryptedData: Data = try chaChaPolyDecryption(with: sealedBox, key: key)
+
+            return saveDecryptedData(with: encryptedData, fileUrl: decryptedFileUrl)
+        }
     } catch {
-        print("Unable to decrypt file")
+        print("Unable to decrypt file.")
         return false
     }
 }

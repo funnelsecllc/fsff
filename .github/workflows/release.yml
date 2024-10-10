@@ -1,0 +1,29 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - v*.*.*
+      
+jobs:
+  release:
+    name: Swift ${{ matrix.swift }} on ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        swift: ['5.10']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: ${{ matrix.swift }}
+      - uses: actions/checkout@v4
+      - name: Build binary
+        run: swift build -c release --arch arm64 --arch x86_64 --product fsff
+      - name: Compress archive
+        run: tar -czf ${{ github.ref_name }}.tar.gz -C .build/release/ fsff
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ github.ref_name }}.tar.gz
+          token: ${{ secrets.GITHUB_TOKEN }}

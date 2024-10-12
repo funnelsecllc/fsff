@@ -19,11 +19,11 @@ jobs:
           swift-version: ${{ matrix.swift }}
       - uses: actions/checkout@v4
       - name: Build binary
-        run: swift build -c release --arch arm64 --arch x86_64 --product fsff
+        run: swift build -c release --product fsff
       - name: Compress archive
-        run: tar -czf ${{ github.ref_name }}.tar.gz -C .build/release/ fsff
+        run: tar -czf ${{ matrix.os }}_${{ github.ref_name }}.tar.gz -C $(swift build -c release --show-bin-path) fsff
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ github.ref_name }}.tar.gz
+          files: ${{ matrix.os }}_${{ github.ref_name }}.tar.gz
           token: ${{ secrets.GITHUB_TOKEN }}

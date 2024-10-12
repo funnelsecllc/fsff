@@ -101,6 +101,16 @@ struct fsff: ParsableCommand {
         switch mode {
         // Run the hash command
         case .hash:
+            if directory {
+                let hashDirectorySuccessful: Bool = hashDirectoryContents(targetUrl: target1Url)
+                if !hashDirectorySuccessful {
+                    print("Failed to hash directory contents.")
+                    throw ArgumentParser.ExitCode.failure
+                }
+                print("Successfully hashed directory contents.")
+                break
+            }
+
             let results: [String] = getFileHashes(from: target1Url)
             print(results.joined(separator: "\n"))
             break

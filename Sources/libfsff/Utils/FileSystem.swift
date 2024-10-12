@@ -27,7 +27,7 @@ import Foundation
 ///   - folder: The directory to search for files
 ///   - mode: The mode to use when enumerating the directory
 /// - Returns: [URL] A list of all files in the given directory
-public func getDirectoryFiles(from folder: URL, mode: Mode) -> [URL] {
+public func getDirectoryFiles(from folder: URL, mode: Mode? = nil) -> [URL] {
     // Create enumerator of regular files in `folder`
     var files: [URL] = []
     guard
@@ -46,7 +46,7 @@ public func getDirectoryFiles(from folder: URL, mode: Mode) -> [URL] {
         do {
             let attributes: URLResourceValues = try url.resourceValues(forKeys: [.isRegularFileKey])
             if attributes.isRegularFile ?? false {
-                if url.pathExtension == "enc" && mode == .decrypt {
+                if url.pathExtension == "enc" && (mode != nil && mode! == .decrypt) {
                     files.append(url)
                     continue
                 }

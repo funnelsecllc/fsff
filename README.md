@@ -71,6 +71,19 @@ fsff compare example.key -t example.key
 Hashes match.
 ```
 
+- Get hashes of content in a directory
+
+```bash
+ls /path/to/dir
+bar.txt foo.txt 
+
+fsff hash /path/to/dir -d
+Successfully hashed directory contents
+
+ls /path/to/dir
+bar.txt foo.txt hash.json
+```
+
 - Generate a key file for encryption or decryption
   
 ```bash

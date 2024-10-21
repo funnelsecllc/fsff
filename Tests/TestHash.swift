@@ -69,4 +69,15 @@ class TestHash: XCTestCase {
         let isSameHash: Bool = compareHashes(target1: file, target2: file2)
         XCTAssertFalse(isSameHash)
     }
+
+    func test_hashDirectoryContents() throws {
+        let directory: URL = URL(fileURLWithPath: "Tests/Support/Hash", isDirectory: true)
+        let results: Bool = hashDirectoryContents(targetUrl: directory)
+        let hashFile: URL = URL(fileURLWithPath: "Tests/Support/Hash/hash.json")
+
+        XCTAssertTrue(results)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: hashFile.path))
+
+        try FileManager.default.removeItem(at: hashFile)
+    }
 }
